@@ -44,9 +44,10 @@ async function main() {
 		.setGas(1000000)
 		.setFunction("getUpdateInfo", new ContractFunctionParameters().addUint256(74));
 	const contractQuerySubmit = await contractQueryTx.execute(client);
-	const contractQueryResult = contractQuerySubmit.getUint256(0).getString(1);
-	console.log('- Here\'s the sha256 that you asked for: ${contractQueryResult[0]} \n');
-	console.log('- Here\'s the link that you asked for: ${contractQueryResult[1]} \n');
+	const contractQueryResult1 = contractQuerySubmit.getUint256(0);
+	const contractQueryResult2 = contractQuerySubmit.getString(1);
+	console.log('- Here\'s the sha256 that you asked for: ' + contractQueryResult1 + '\n');
+	console.log('- Here\'s the link that you asked for: ' + contractQueryResult2 + '\n');
 
 	// Call contract function to update the state variable
 	const contractExecuteTx = new ContractExecuteTransaction()
@@ -66,8 +67,9 @@ async function main() {
 		.setGas(100000)
 		.setFunction("getUpdateInfo", new ContractFunctionParameters().addUint256(34));
 	const contractQuerySubmit1 = await contractQueryTx1.execute(client);
-	const contractQueryResult1 = contractQuerySubmit1.getUint256(0).getString(1);
-	console.log('- Here\'s the sha256 that you asked for: ${contractQueryResult1[0]} \n');
-	console.log('- Here\'s the link that you asked for: ${contractQueryResult1[1]} \n');
+	const contractQueryResult3 = contractQuerySubmit1.getUint256(0);
+	const contractQueryResult4 = contractQuerySubmit1.getString(1);
+	console.log('- Here\'s the sha256 that you asked for: ' + contractQueryResult3.toString() + '\n');
+	console.log('- Here\'s the link that you asked for: ' + contractQueryResult4 +  '\n');
 }
 main();
