@@ -29,25 +29,16 @@ async function main() {
 		.setBytecode(contractBytecode)
 		.setGas(1000000)
 		.setConstructorParameters(
-			new ContractFunctionParameters().addUint256(74).addUint256(14).addString("Works")
+			new ContractFunctionParameters()
 		);
 	const contractInstantiateSubmit = await contractInstantiateTx.execute(client);
 	const contractInstantiateRx = await contractInstantiateSubmit.getReceipt(client);
 	const contractId = contractInstantiateRx.contractId;
+	const contractCost = contractInstantiateRx.exchangeRate.hbars;
 	const contractAddress = contractId.toSolidityAddress();
 	console.log(`- The smart contract ID is: ${contractId} \n`);
 	console.log(`- The smart contract ID in Solidity format is: ${contractAddress} \n`);
-
-	// Query the contract to check changes in state variable
-	const contractQueryTx = new ContractCallQuery()
-		.setContractId(contractId)
-		.setGas(1000000)
-		.setFunction("getUpdateInfo", new ContractFunctionParameters().addUint256(74));
-	const contractQuerySubmit = await contractQueryTx.execute(client);
-	const contractQueryResult1 = contractQuerySubmit.getUint256(0);
-	const contractQueryResult2 = contractQuerySubmit.getString(1);
-	console.log('- Here\'s the sha256 that you asked for: ' + contractQueryResult1 + '\n');
-	console.log('- Here\'s the link that you asked for: ' + contractQueryResult2 + '\n');
+	console.log('- The cost to create the smart contract is: ' + contractCost + ' Hbars \n');
 
 	// Call contract function to update the state variable
 	const contractExecuteTx = new ContractExecuteTransaction()
@@ -59,7 +50,9 @@ async function main() {
 		);
 	const contractExecuteSubmit = await contractExecuteTx.execute(client);
 	const contractExecuteRx = await contractExecuteSubmit.getReceipt(client);
+	const getCost = contractExecuteRx.exchangeRate.hbars;
 	console.log(`- Contract function call status: ${contractExecuteRx.status} \n`);
+	console.log('- The cost to call the smart contract function is: ' + getCost + ' Hbars \n');
 
 	// Query the contract to check changes in state variable
 	const contractQueryTx1 = new ContractCallQuery()

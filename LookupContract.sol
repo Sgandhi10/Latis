@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
+// To Compile Run: solcjs --bin LookupContract.sol
 pragma solidity >=0.7.0 <0.9.0;
 
 
@@ -9,11 +10,7 @@ contract LookupContract {
         string loc;
     }
 
-    mapping (uint => UpdateInfo) public myDirectory;
-
-    constructor (uint _id, uint256 _checksum, string memory _loc) public {
-            myDirectory[_id] = UpdateInfo(_checksum, _loc);
-        }
+    mapping (uint => UpdateInfo) myDirectory;
 
     function setUpdateInfo(uint _id, uint256 _checksum, string memory _loc) public {
             myDirectory[_id] = UpdateInfo(_checksum, _loc);
