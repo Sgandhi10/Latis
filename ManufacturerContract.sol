@@ -3,19 +3,27 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 // Information on OpenZeppelin Contracts can be found at: https://docs.openzeppelin.com/contracts/4.x/access-control
-import "node_modules/@openzeppelin/contracts/access/AccessControl.sol";
-import "node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-contracts-release-v4.8/contracts/access/AccessControl.sol";
+import "openzeppelin-contracts-release-v4.8/contracts/token/ERC20/ERC20.sol";
 
 contract ManufacturerContract is ERC20, AccessControl {
-    bytes32 public constant ASSIGN_UPDATE = keccak256("ASSIGN_UPDATE");
-    bytes32 public constant VIEW_UPDATE = keccak256("VIEW_UPDATE");
-    bytes32 public constant IMPLEMENT_UPDATE = keccak256("IMPLEMENT_UPDATE");
-    bytes32 public constant ADMIN = keccak256("ADMIN");
-    bytes32 public constant OWNER = keccak256("OWNER");
+    bytes32 public constant ASSIGN_UPDATE = 0x293ac1473af20b374a0b048d245a81412cd467992bf656b69382c50f310e9f8c;
+    bytes32 public constant VIEW_UPDATE = 0x4acc1d14ea2d6e85862a81bf8d5c1251286193eed6e3b81aab32a560eecea7ff;
+    bytes32 public constant IMPLEMENT_UPDATE = 0x02ab26f719f5550031a1a942ddcb6b91a1c5b98639464444f1bb36c8a35efc27;
+    bytes32 public constant ADMIN = 0xdf8b4c520ffe197c5343c6f5aec59570151ef9a492f2c624fd45ddde6135ec42;
+    bytes32 public constant OWNER = 0x6270edb7c868f86fda4adedba75108201087268ea345934db8bad688e1feb91b;
+
+    string private _errorMessage = "No Permission";
 
     struct UpdateInfo {
         uint256 checksum;
-        string loc;
+        fileCoin loc;
+    }
+
+    struct fileCoin {
+        uint128 minerId;
+        address CID;
+        address userAddress;
     }
 
     mapping(address => UpdateInfo) private myDirectory;
@@ -29,36 +37,52 @@ contract ManufacturerContract is ERC20, AccessControl {
     function assignUpdate(
         address _to,
         uint256 _checksum,
-        string memory _loc
+        uint128 _minerId,
+        address _CID,
+        address _userAddress
     ) public {
         require(
             hasRole(ASSIGN_UPDATE, msg.sender),
-            "Caller doesn't have permission to assign update"
+            _errorMessage
         );
-        myDirectory[_to] = UpdateInfo(_checksum, _loc);
+        myDirectory[_to] = UpdateInfo(
+            _checksum,
+            fileCoin(_minerId, _CID, _userAddress)
+        );
         pendingUpdates.push(_to);
     }
 
-    function viewUpdates() public view returns (address[] memory _pendingUpdates) {
+    function viewUpdates()
+        public
+        view
+        returns (address[] memory _pendingUpdates)
+    {
         require(
             hasRole(VIEW_UPDATE, msg.sender),
-            "Caller doesn't have permission to view update"
+            _errorMessage
         );
         return (pendingUpdates);
     }
 
-    function implementUpdate(address _id) public view returns (uint256, string memory){
+    function implementUpdate(
+        address _id
+    ) public view returns (uint256, uint128, address, address) {
         require(
             hasRole(IMPLEMENT_UPDATE, msg.sender),
-            "Caller doesn't have permission to implement update"
+            _errorMessage
         );
-        return (myDirectory[_id].checksum, myDirectory[_id].loc);
+        return (
+            myDirectory[_id].checksum,
+            myDirectory[_id].loc.minerId,
+            myDirectory[_id].loc.CID,
+            myDirectory[_id].loc.userAddress
+        );
     }
 
     function successUpdate(address _id) public {
         require(
             hasRole(IMPLEMENT_UPDATE, msg.sender),
-            "Caller doesn't have permission to implement update"
+            _errorMessage
         );
         delete myDirectory[_id];
     }
@@ -66,7 +90,7 @@ contract ManufacturerContract is ERC20, AccessControl {
     function failUpdate(address _id) public {
         require(
             hasRole(IMPLEMENT_UPDATE, msg.sender),
-            "Caller doesn't have permission to implement update"
+            _errorMessage
         );
         failedUpdates.push(_id);
     }
@@ -74,64 +98,32 @@ contract ManufacturerContract is ERC20, AccessControl {
     function grantAdmin(address _to) public {
         require(
             hasRole(OWNER, msg.sender),
-            "Caller doesn't have permission to grant role"
+            _errorMessage
         );
         _grantRole(ADMIN, _to);
     }
 
-    function grantAssignUpdate(address _to) public {
+    function grantPermission(address _to, bytes32 _permission) public {
         require(
             hasRole(ADMIN, msg.sender),
-            "Caller doesn't have permission to grant role"
+            _errorMessage
         );
-        _grantRole(ASSIGN_UPDATE, _to);
-    }
-
-    function grantViewUpdate(address _to) public {
-        require(
-            hasRole(ADMIN, msg.sender),
-            "Caller doesn't have permission to grant role"
-        );
-        _grantRole(VIEW_UPDATE, _to);
-    }
-
-    function grantImplementUpdate(address _to) public {
-        require(
-            hasRole(ADMIN, msg.sender),
-            "Caller doesn't have permission to grant role"
-        );
-        _grantRole(IMPLEMENT_UPDATE, _to);
+        _grantRole(_permission, _to);
     }
 
     function revokeAdmin(address _to) public {
         require(
             hasRole(OWNER, msg.sender),
-            "Caller doesn't have permission to revoke role"
+            _errorMessage
         );
         _revokeRole(ADMIN, _to);
     }
 
-    function revokeAssignUpdate(address _to) public {
+    function revokePermission(address _to, bytes32 _permission) public {
         require(
             hasRole(ADMIN, msg.sender),
-            "Caller doesn't have permission to revoke role"
+            _errorMessage
         );
-        _revokeRole(ASSIGN_UPDATE, _to);
-    }
-
-    function revokeViewUpdate(address _to) public {
-        require(
-            hasRole(ADMIN, msg.sender),
-            "Caller doesn't have permission to revoke role"
-        );
-        _revokeRole(VIEW_UPDATE, _to);
-    }
-
-    function revokeImplementUpdate(address _to) public {
-        require(
-            hasRole(ADMIN, msg.sender),
-            "Caller doesn't have permission to revoke role"
-        );
-        _revokeRole(IMPLEMENT_UPDATE, _to);
+        _revokeRole(_permission, _to);
     }
 }
