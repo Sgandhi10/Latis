@@ -11,6 +11,7 @@ const {
 	ContractCallQuery,
 	Hbar,
 	ContractCreateFlow,
+	PublicKey
 } = require("@hashgraph/sdk");
 const fs = require("fs");
 
@@ -22,7 +23,7 @@ const client = Client.forTestnet().setOperator(operatorId, operatorKey);
 
 async function main() {
 	// Import the compiled contract bytecode
-	const contractBytecode = fs.readFileSync("LookupContract_sol_LookupContract.bin");
+	const contractBytecode = fs.readFileSync("ManufacturerContract_sol_ManufacturerContract.bin");
 
 	// Instantiate the smart contract
 	const contractInstantiateTx = new ContractCreateFlow()
@@ -40,13 +41,38 @@ async function main() {
 	console.log(`- The smart contract ID in Solidity format is: ${contractAddress} \n`);
 	console.log('- The cost to create the smart contract is: ' + contractCost + ' Hbars \n');
 
+	// Call contract to add assign update permissions
+	const contractExecuteTx3 = new ContractExecuteTransaction()
+		.setContractId(contractId)
+		.setGas(1000000)
+		.setFunction(
+			"grantPermission",
+			new ContractFunctionParameters().addAddress(process.env.MY_PUBLIC_KEY).addUint8(0x02)
+		);
+	const contractExecuteSubmit3 = await contractExecuteTx3.execute(client);
+	const contractExecuteRx3 = await contractExecuteSubmit3.getReceipt(client);
+	console.log(`- Contract function call status: ${contractExecuteRx3.status} \n`);
+
+	// Call contract to add view permissions
+	const contractExecuteTx4 = new ContractExecuteTransaction()
+		.setContractId(contractId)
+		.setGas(1000000)
+		.setFunction(
+			"grantPermission",
+			new ContractFunctionParameters().addAddress(process.env.MY_PUBLIC_KEY).addUint8(0x01)
+		);
+	const contractExecuteSubmit4 = await contractExecuteTx4.execute(client);
+	const contractExecuteRx4 = await contractExecuteSubmit4.getReceipt(client);
+	console.log(`- Contract function call status: ${contractExecuteRx4.status} \n`);
+	
+	
 	// Call contract function to update the state variable
 	const contractExecuteTx = new ContractExecuteTransaction()
 		.setContractId(contractId)
-		.setGas(100000)
+		.setGas(1000000)
 		.setFunction(
-			"setUpdateInfo",
-			new ContractFunctionParameters().addUint256(34).addUint256(17).addString("Test2")
+			"assignUpdate",
+			new ContractFunctionParameters().addAddress(process.env.MY_PUBLIC_KEY).addUint256(0x34).addUint256(0xff32).addAddress(process.env.MY_PUBLIC_KEY).addAddress(process.env.MY_PUBLIC_KEY)
 		);
 	const contractExecuteSubmit = await contractExecuteTx.execute(client);
 	const contractExecuteRx = await contractExecuteSubmit.getReceipt(client);
@@ -58,11 +84,15 @@ async function main() {
 	const contractQueryTx1 = new ContractCallQuery()
 		.setContractId(contractId)
 		.setGas(100000)
-		.setFunction("getUpdateInfo", new ContractFunctionParameters().addUint256(34));
+		.setFunction("implementUpdate", new ContractFunctionParameters().addAddress(process.env.MY_PUBLIC_KEY));
 	const contractQuerySubmit1 = await contractQueryTx1.execute(client);
-	const contractQueryResult3 = contractQuerySubmit1.getUint256(0);
-	const contractQueryResult4 = contractQuerySubmit1.getString(1);
-	console.log('- Here\'s the sha256 that you asked for: ' + contractQueryResult3.toString() + '\n');
-	console.log('- Here\'s the link that you asked for: ' + contractQueryResult4 +  '\n');
+	const checksum = contractQuerySubmit1.getUint256(0);
+	console.log(`- The checksum is: ${checksum} \n`);
+	const minerId = contractQuerySubmit1.getUint256(1);
+	console.log(`- The miner ID is: ${minerId} \n`);
+	const CID = contractQuerySubmit1.getAddress(2);
+	console.log(`- The CID is: ${CID} \n`);
+	const userAddress = contractQuerySubmit1.getAddress(3);
+	console.log(`- The user address is: ${userAddress} \n`);
 }
 main();
